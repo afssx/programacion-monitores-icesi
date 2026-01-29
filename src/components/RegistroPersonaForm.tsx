@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   type PersonaData,
   type DiaSemana,
@@ -40,6 +40,7 @@ interface Props {
   onDelete: (id: PersonaData["id"]) => void;
   maxHoras: number;
   onMaxHorasChange: (value: number) => void;
+  personas: PersonaData[];
 }
 
 export const RegistroPersonaForm: React.FC<Props> = ({
@@ -47,6 +48,7 @@ export const RegistroPersonaForm: React.FC<Props> = ({
   onDelete,
   maxHoras,
   onMaxHorasChange,
+  personas,
 }) => {
   const {
     handleSubmit,
@@ -68,8 +70,6 @@ export const RegistroPersonaForm: React.FC<Props> = ({
 
   const tipoSeleccionado = useWatch({ control, name: "tipo", defaultValue: "nuevo" });
 
-  const [personas, setPersonas] = useState<PersonaData[]>([]);
-
   const enviar = (data: FormValues) => {
     const dispo: PersonaData["disponibilidad"] = {};
     dias.forEach((d) => {
@@ -87,14 +87,12 @@ export const RegistroPersonaForm: React.FC<Props> = ({
       tipo: data.tipo,
       disponibilidad: dispo,
     };
-    setPersonas((prev) => [...prev, persona]);
 
     onSubmit(persona);
     reset();
   };
 
   const eliminarPersona = (id: string) => {
-    setPersonas((prev) => prev.filter((p) => p.id !== id));
     onDelete(id);
   };
 

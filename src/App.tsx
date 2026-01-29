@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { ThemeProvider, createTheme, CssBaseline } from "@mui/material";
 import { Container, Box, Button } from "@mui/material";
 
@@ -9,7 +9,15 @@ import type { PersonaData } from "./types";
 import Header from "./components/Header";
 
 export const App: React.FC = () => {
-  const [personas, setPersonas] = useState<PersonaData[]>([]);
+  const [personas, setPersonas] = useState<PersonaData[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const stored = localStorage.getItem("personas");
+      return stored ? (JSON.parse(stored) as PersonaData[]) : [];
+    } catch {
+      return [];
+    }
+  });
   const [completado, setCompletado] = useState(false);
   const [mode, setMode] = useState<"light" | "dark">("light");
   const [maxHoras, setMaxHoras] = useState<number>(14);
@@ -36,11 +44,25 @@ export const App: React.FC = () => {
   const handleAdd = (p: PersonaData) => setPersonas((prev) => [...prev, p]);
   const handleDelete = (id: string) =>
     setPersonas((prev) => prev.filter((p) => p.id !== id));
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("personas", JSON.stringify(personas));
+    } catch {
+      // ignore storage errors
+    }
+  }, [personas]);
+
   const finalize = () => setCompletado(true);
   const reiniciar = () => {
     setPersonas([]);
     setCompletado(false);
     setMaxHoras(14);
+    try {
+      localStorage.removeItem("personas");
+    } catch {
+      // ignore storage errors
+    }
   };
 
   return (
@@ -57,6 +79,7 @@ export const App: React.FC = () => {
                   onDelete={handleDelete}
                   maxHoras={maxHoras}
                   onMaxHorasChange={setMaxHoras}
+                  personas={personas}
                 />
                 {personas.length > 0 && (
                   <Box sx={{ mt: 2 }}>
