@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { ThemeProvider, createTheme, CssBaseline } from "@mui/material";
-import { Container, Box } from "@mui/material";
+import { Container, Box, Button } from "@mui/material";
 
 import { ColorModeContext } from "./ThemeContext";
 import { RegistroPersonaForm } from "./components/RegistroPersonaForm";
@@ -12,6 +12,7 @@ export const App: React.FC = () => {
   const [personas, setPersonas] = useState<PersonaData[]>([]);
   const [completado, setCompletado] = useState(false);
   const [mode, setMode] = useState<"light" | "dark">("light");
+  const [maxHoras, setMaxHoras] = useState<number>(14);
 
   const colorMode = useMemo(
     () => ({
@@ -33,10 +34,13 @@ export const App: React.FC = () => {
   );
 
   const handleAdd = (p: PersonaData) => setPersonas((prev) => [...prev, p]);
+  const handleDelete = (id: string) =>
+    setPersonas((prev) => prev.filter((p) => p.id !== id));
   const finalize = () => setCompletado(true);
   const reiniciar = () => {
     setPersonas([]);
     setCompletado(false);
+    setMaxHoras(14);
   };
 
   return (
@@ -48,17 +52,24 @@ export const App: React.FC = () => {
           <Container sx={{ py: 4 }}>
             {!completado ? (
               <>
-                <RegistroPersonaForm onSubmit={handleAdd} />
+                <RegistroPersonaForm
+                  onSubmit={handleAdd}
+                  onDelete={handleDelete}
+                  maxHoras={maxHoras}
+                  onMaxHorasChange={setMaxHoras}
+                />
                 {personas.length > 0 && (
                   <Box sx={{ mt: 2 }}>
-                    <button onClick={finalize}>Generar cronograma</button>
+                    <Button variant="contained" onClick={finalize}>
+                      Generar cronograma
+                    </Button>
                   </Box>
                 )}
               </>
             ) : (
               <>
                 <button onClick={reiniciar}>Reiniciar registro</button>
-                <CronogramaSemanal personas={personas} />
+                <CronogramaSemanal personas={personas} maxHorasSemanales={maxHoras} />
               </>
             )}
           </Container>

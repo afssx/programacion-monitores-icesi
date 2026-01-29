@@ -1,7 +1,7 @@
 export interface PersonaData {
   id: string; // identificador único
   nombre: string;
-  tipo: "nuevo" | "veterano";
+  tipo: "nuevo" | "veterano" | "bloqueo";
   disponibilidad: {
     [dia in DiaSemana]?: Franja[];
   };

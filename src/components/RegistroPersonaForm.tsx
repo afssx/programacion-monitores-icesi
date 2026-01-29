@@ -25,27 +25,35 @@ import {
   Box,
   FormHelperText,
 } from "@mui/material";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, useWatch } from "react-hook-form";
 import { v4 as uuidv4 } from "uuid";
 import { ListaPersonas } from "./ListaPersonas";
 
 type FormValues = {
   nombre: string;
-  tipo: "nuevo" | "veterano";
+  tipo: "nuevo" | "veterano" | "bloqueo";
   disponibilidad: { [key in DiaSemana]?: Record<Franja, boolean> };
 };
 
 interface Props {
   onSubmit: (persona: PersonaData) => void;
+  onDelete: (id: PersonaData["id"]) => void;
+  maxHoras: number;
+  onMaxHorasChange: (value: number) => void;
 }
 
-export const RegistroPersonaForm: React.FC<Props> = ({ onSubmit }) => {
+export const RegistroPersonaForm: React.FC<Props> = ({
+  onSubmit,
+  onDelete,
+  maxHoras,
+  onMaxHorasChange,
+}) => {
   const {
-    control,
     handleSubmit,
     reset,
     register,
     formState: { errors },
+    control,
   } = useForm<FormValues>({
     defaultValues: {
       nombre: "",
@@ -57,6 +65,8 @@ export const RegistroPersonaForm: React.FC<Props> = ({ onSubmit }) => {
       }, {} as any),
     },
   });
+
+  const tipoSeleccionado = useWatch({ control, name: "tipo", defaultValue: "nuevo" });
 
   const [personas, setPersonas] = useState<PersonaData[]>([]);
 
@@ -73,7 +83,7 @@ export const RegistroPersonaForm: React.FC<Props> = ({ onSubmit }) => {
     });
     const persona: PersonaData = {
       id: uuidv4(),
-      nombre: data.nombre,
+      nombre: data.nombre?.trim() || "No disponible",
       tipo: data.tipo,
       disponibilidad: dispo,
     };
@@ -83,15 +93,28 @@ export const RegistroPersonaForm: React.FC<Props> = ({ onSubmit }) => {
     reset();
   };
 
+  const eliminarPersona = (id: string) => {
+    setPersonas((prev) => prev.filter((p) => p.id !== id));
+    onDelete(id);
+  };
+
   return (
     <form onSubmit={handleSubmit(enviar)}>
-      <Box display="flex" gap={2} mb={2}>
+      <Box display="flex" gap={2} mb={2} alignItems="flex-end">
         <TextField
           label="Nombre"
           fullWidth
-          {...register("nombre", { required: "El nombre es requerido" })}
+          disabled={tipoSeleccionado === "bloqueo"}
+          placeholder={tipoSeleccionado === "bloqueo" ? "No necesario para bloqueo" : ""}
+          {...register("nombre", {
+            required:
+              tipoSeleccionado === "bloqueo" ? false : "El nombre es requerido",
+          })}
           error={!!errors.nombre}
-          helperText={errors.nombre?.message}
+          helperText={
+            errors.nombre?.message ||
+            (tipoSeleccionado === "bloqueo" ? "Se guardará como 'No disponible'" : "")
+          }
         />
 
         <FormControl fullWidth error={!!errors.tipo}>
@@ -104,11 +127,21 @@ export const RegistroPersonaForm: React.FC<Props> = ({ onSubmit }) => {
               <Select {...field} labelId="tipo-label" label="Tipo">
                 <MenuItem value="nuevo">Nuevo</MenuItem>
                 <MenuItem value="veterano">Veterano</MenuItem>
+                <MenuItem value="bloqueo">Bloqueo (bloquear franja)</MenuItem>
               </Select>
             )}
           />
           <FormHelperText>{errors.tipo?.message}</FormHelperText>
         </FormControl>
+
+        <TextField
+          label="Máximo de horas por persona (semana)"
+          type="number"
+          value={maxHoras}
+          inputProps={{ min: 0 }}
+          onChange={(e) => onMaxHorasChange(Number(e.target.value) || 0)}
+          fullWidth
+        />
       </Box>
       <TableContainer component={Paper} sx={{ my: 2 }}>
         <Table size="small">
@@ -147,7 +180,7 @@ export const RegistroPersonaForm: React.FC<Props> = ({ onSubmit }) => {
       <Button type="submit" variant="contained" color="primary">
         Registrar Persona
       </Button>
-      <ListaPersonas personas={personas} />
+      <ListaPersonas personas={personas} onDelete={eliminarPersona} />
     </form>
   );
 };
