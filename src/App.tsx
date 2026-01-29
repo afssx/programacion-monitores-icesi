@@ -58,11 +58,6 @@ export const App: React.FC = () => {
     setPersonas([]);
     setCompletado(false);
     setMaxHoras(14);
-    try {
-      localStorage.removeItem("personas");
-    } catch {
-      // ignore storage errors
-    }
   };
 
   return (

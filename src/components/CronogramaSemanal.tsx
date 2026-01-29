@@ -41,13 +41,6 @@ export const CronogramaSemanal: React.FC<Props> = ({ personas, maxHorasSemanales
       const duracion = horasFranja[f];
       const dispo = personas.filter((p) => p.disponibilidad[d]?.includes(f));
 
-      // Si hay una persona tipo bloqueo, la franja queda bloqueada
-      const bloqueos = dispo.filter((p) => p.tipo === "bloqueo");
-      if (bloqueos.length) {
-        asign[d][f] = [bloqueos[0]];
-        return;
-      }
-
       // Respeta tope semanal
       const elegibles = dispo.filter(
         (p) => horasPersona[p.id] + duracion <= maxHorasSemanales
@@ -68,6 +61,11 @@ export const CronogramaSemanal: React.FC<Props> = ({ personas, maxHorasSemanales
         seleccion = elegibles.slice(0, 3);
       } else {
         // Franja de apertura o cierre sin veterano elegible: se deja sin asignar
+        seleccion = [];
+      }
+
+      if (esPrimeraOultima && !seleccion.some((p) => p.tipo === "veterano")) {
+        // Requisito: en la primera y última franja debe haber al menos un veterano
         seleccion = [];
       }
 
@@ -102,9 +100,13 @@ export const CronogramaSemanal: React.FC<Props> = ({ personas, maxHorasSemanales
                     {selected.length > 0 ? (
                       selected.map(p => (
                         <Typography key={p.id} variant="body2">
-                          {p.tipo === "bloqueo"
-                            ? `${p.nombre} (Bloqueado)`
-                            : `${p.nombre} ${p.tipo==="veterano"?"(V)":"(N)"}`}
+                          {`${p.nombre} ${
+                            p.tipo === "veterano"
+                              ? "(V)"
+                              : p.tipo === "bloqueo"
+                              ? "(B)"
+                              : "(N)"
+                          }`}
                         </Typography>
                       ))
                     ) : (
